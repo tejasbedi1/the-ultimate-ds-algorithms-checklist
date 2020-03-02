@@ -1,0 +1,9 @@
+-> char a[4] = "abc" 	=== CORRECT
+-> a[] = "abc"		=== WILL NOT WORK
+	- characters are pointers 
+	- https://stackoverflow.com/questions/10088661/assigning-a-string-of-characters-to-a-char-array
+
+-> char a[4] = "abc" 
+	- Here we have a,b,c and \0 i.e null
+
+	 
