@@ -105,6 +105,18 @@ void displayArray (int size, int *levels)
 	cout<<endl;
 }
 
+void displayQueue (queue <data> &que)
+{
+	cout<<"Displaying Queue...\n";
+	queue <data> temp = que;
+	while (temp.empty() != true)
+	{
+		cout<<"("<<temp.front().nodeA<<","<<temp.front().nodeB<<") ";
+		temp.pop();
+	}
+	cout<<endl;
+}
+
 void assignLevels(int V, vector <data> *vArray, int *levels)
 {
 	debug(2, "Assigning Levels...\n");
@@ -170,9 +182,56 @@ void assignLevels(int V, vector <data> *vArray, int *levels)
 	}
 }
 
+bool findPathDFS(int V, vector <data> *vArray, stack <int> &stk, int node, int sink,
+	queue <data> &path)
+{
+	bool pathFound = false;
+	
+	for (auto x: vArray[node])
+	{
+		if (x.state == 'e')
+		{
+			// Forward edge
+			if (x.capacity != 0)
+			{
+				if (x.currentFlow < x.capacity)
+				{
+					path.push(x);
+					if (x.nodeB == sink)
+						pathFound = true;
+					else if (findPathDFS(V, vArray, stk, x.nodeB, sink, path))
+						pathFound = true;
+					else
+						path.pop();
+				}
+			}
+			// Residual edge
+			else if (x.capacity == 0)
+			{
+				if (x.currentFlow > 0)
+				{
+					path.push(x);
+					if (x.nodeB == sink)
+						pathFound = true;
+					else if (findPathDFS(V, vArray, stk, x.nodeB, sink, path))
+						pathFound = true;
+					else
+						path.pop();
+				}
+			}
+			
+			if (pathFound == true)
+				return true;
+		}
+	}
+	return false;
+}
+
 void DinicsAlgorithm(int V, vector <data> *vArray)
 {
 	int i;
+	int src = 0;
+	int sink = 5;
 	
 	// Consruct a Level graph easy, it is, We will do it BFS's ly
 	int *levels;
@@ -182,11 +241,18 @@ void DinicsAlgorithm(int V, vector <data> *vArray)
 	
 	assignLevels(V, vArray, levels);
 	if (LOG_LEVEL >= 2) displayArray (V, levels);
-	
 	if (LOG_LEVEL >= 2) displayState(V, vArray);
 	
 	// Next using edges that are enabled find paths dfs'ly
-	
+	stack <int> stk;
+	queue <data> path;
+	stk.push(src);
+	while (findPathDFS(V, vArray, stk, src, sink, path))
+	{
+		debug (2, "Chosen Path...\n");
+		if (LOG_LEVEL >= 2) displayQueue(path);
+		break;	
+	}
 	
 	delete [] levels;
 }
