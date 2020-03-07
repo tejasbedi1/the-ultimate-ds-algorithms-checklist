@@ -105,6 +105,18 @@ void displayArray (int size, int *levels)
 	cout<<endl;
 }
 
+void displayStack (stack <data> &stk)
+{
+	cout<<"Displaying Stack...\n";
+	stack <data> temp = stk;
+	while (temp.empty() != true)
+	{
+		cout<<"("<<temp.top().nodeA<<","<<temp.top().nodeB<<") ";
+		temp.pop();
+	}
+	cout<<endl;
+}
+
 void displayQueue (queue <data> &que)
 {
 	cout<<"Displaying Queue...\n";
@@ -134,57 +146,63 @@ void assignLevels(int V, vector <data> *vArray, int *levels)
 		for (auto &x: vArray[front])
 		{
 			debug (3, " Checking ", x.nodeB, "\n");
-			// Checking if node has not been already visited & is not a backward edge
-			if (levels[x.nodeB] == -1 && x.capacity != 0)
+			// Forward Edge
+			if (x.capacity != 0) 
 			{
-				que.push(x.nodeB);
-				levels[x.nodeB] = levels[front] + 1;
-				x.state = 'e';
-				debug (3, "  Level not assigned, Capacity not zero\n");
-			}
-			// Node already visited
-			else if (levels[x.nodeB] != -1)
-			{
-				// Check if forward or backward edge and if has the capacity to carry 
-				// anything 
-				
-				// Not a resedual edge
-				if (x.capacity != 0 && x.currentFlow < x.capacity)
-				{ 
-					if (levels[front] < levels[x.nodeB])
-						x.state = 'e';
-					else
-						x.state = 'd';
-				}
-				// Residual edge 
-				else if (x.capacity == 0 && x.currentFlow > 0)
+				// If connection is possible
+				if (x.capacity-x.currentFlow > 0)
 				{
-					if (levels[front] < levels[x.nodeB])
+					// Unvisited
+					if (levels[x.nodeB] == -1)
+					{
+						que.push(x.nodeB);
+						levels[x.nodeB] = 1 + levels[x.nodeA];
 						x.state = 'e';
+					}
 					else
-						x.state = 'd';
+					{
+						if (levels[x.nodeA] < levels[x.nodeB])
+							x.state = 'e';
+						else
+							x.state = 'd';
+					}
 				}
 				else
-				{
 					x.state = 'd';
-				}
-				debug (3, "  Level already assigned\n");
 			}
-			// In case of residual edges with 
-			else
+			// Backard Edge
+			else 
 			{
-				x.state = 'd';
-				debug (3, "  Level not assigned, buts its a residual graph\n");
+				// If connection is possible
+				if (x.currentFlow > 0)
+				{
+					// Unvisited
+					if (levels[x.nodeB] == -1)
+					{
+						que.push(x.nodeB);
+						levels[x.nodeB] = 1 + levels[x.nodeA];
+						x.state = 'e';
+					}
+					else
+					{
+						if (levels[x.nodeA] < levels[x.nodeB])
+							x.state = 'e';
+						else
+							x.state = 'd';
+					}
+				}
+				else
+					x.state = 'd';
 			}	
-				
 		}
 		que.pop();
 	}
 }
 
 bool findPathDFS(int V, vector <data> *vArray, stack <int> &stk, int node, int sink,
-	queue <data> &path)
+	stack <data> &path)
 {
+	debug (3, "Path Finding...\n");
 	bool pathFound = false;
 	
 	for (auto x: vArray[node])
@@ -196,13 +214,18 @@ bool findPathDFS(int V, vector <data> *vArray, stack <int> &stk, int node, int s
 			{
 				if (x.currentFlow < x.capacity)
 				{
+					debug(3, " Pushing- ", "(", x.nodeA, ",", x.nodeB, ")", "\n");
 					path.push(x);
 					if (x.nodeB == sink)
 						pathFound = true;
 					else if (findPathDFS(V, vArray, stk, x.nodeB, sink, path))
 						pathFound = true;
 					else
+					{
+						debug(3, " Popping\n");
 						path.pop();
+					}
+						
 				}
 			}
 			// Residual edge
@@ -210,13 +233,18 @@ bool findPathDFS(int V, vector <data> *vArray, stack <int> &stk, int node, int s
 			{
 				if (x.currentFlow > 0)
 				{
+					debug(3, " Pushing- ", "(", x.nodeA, ",", x.nodeB, ")", "\n");
 					path.push(x);
 					if (x.nodeB == sink)
 						pathFound = true;
 					else if (findPathDFS(V, vArray, stk, x.nodeB, sink, path))
 						pathFound = true;
 					else
+					{
+						debug(3, " Popping\n");
 						path.pop();
+					}
+						
 				}
 			}
 			
@@ -227,63 +255,172 @@ bool findPathDFS(int V, vector <data> *vArray, stack <int> &stk, int node, int s
 	return false;
 }
 
+int findMinCapacity(stack <data> stk)
+{
+	data edgeData;
+	int minCap = INT_MAX;
+	while (stk.empty() != true)
+	{
+		edgeData = stk.top();
+		// FRONT EDGE
+		if (edgeData.capacity != 0)
+		{
+			if (minCap > (edgeData.capacity - edgeData.currentFlow))
+				minCap = edgeData.capacity - edgeData.currentFlow;
+		}
+		// RESIDUAL 
+		else if (edgeData.capacity == 0)
+		{
+			if (minCap > edgeData.currentFlow)
+				minCap = edgeData.currentFlow;
+		}
+		stk.pop();
+	}
+	return minCap;
+}
+
+int modifyAllEdges(int V, vector <data> *vArray, stack <data> &stk, int minCapacity)
+{
+	data edgeData;
+	while (stk.empty() != true)
+	{
+		edgeData = stk.top();
+		for(data &x: vArray[edgeData.nodeA])
+		{
+			if (x.nodeB == edgeData.nodeB)
+			{
+				// Forward Edge
+				if (x.capacity != 0)
+				{
+					x.currentFlow += minCapacity;
+					for (data &y: vArray[edgeData.nodeB])
+						if (y.nodeB == edgeData.nodeA)
+							y.currentFlow += minCapacity;
+				}
+				// Residual 
+				else if (x.capacity == 0)
+				{
+					x.currentFlow -= minCapacity;
+					for (data &y: vArray[edgeData.nodeB])
+						if (y.nodeB == edgeData.nodeA)
+							y.currentFlow -= minCapacity;
+				}
+			}
+		}
+		stk.pop();
+	}
+}
+
 void DinicsAlgorithm(int V, vector <data> *vArray)
 {
 	int i;
 	int src = 0;
 	int sink = 5;
+	int minCapacity;
+	int flow = 0;
 	
-	// Consruct a Level graph easy, it is, We will do it BFS's ly
 	int *levels;
 	levels = new int[V];
-	for (i=0; i<V; i++)
-		levels[i] = -1;
 	
-	assignLevels(V, vArray, levels);
-	if (LOG_LEVEL >= 2) displayArray (V, levels);
-	if (LOG_LEVEL >= 2) displayState(V, vArray);
-	
-	// Next using edges that are enabled find paths dfs'ly
-	stack <int> stk;
-	queue <data> path;
-	stk.push(src);
-	while (findPathDFS(V, vArray, stk, src, sink, path))
+	while (true)
 	{
-		debug (2, "Chosen Path...\n");
-		if (LOG_LEVEL >= 2) displayQueue(path);
-		break;	
+		for (i=0; i<V; i++)
+			levels[i] = -1;
+		
+		// Consruct a Level graph easy, it is, We will do it BFS's ly
+		assignLevels(V, vArray, levels);
+		if (LOG_LEVEL >= 2) displayArray (V, levels);
+		if (LOG_LEVEL >= 2) displayState(V, vArray);
+		
+		if (levels[sink] == -1)
+			break;
+			
+		// Next using edges that are enabled find paths dfs'ly
+		stack <int> stk;
+		stack <data> path;
+		stk.push(src);
+		
+		while (findPathDFS(V, vArray, stk, src, sink, path))
+		{
+			debug (2, "Chosen Path...\n");
+			if (LOG_LEVEL >= 2) displayStack(path);
+			
+			// Walk the selected path & Find minimum capacity
+			minCapacity = findMinCapacity(path);
+			flow += minCapacity;
+			debug (2, "Max Capacity of Path: ", minCapacity, "\n");
+			
+			// Remove that capacity from all involved edges
+			modifyAllEdges(V, vArray, path, minCapacity);
+			if (LOG_LEVEL >= 2) display(V, vArray);	
+			//break;	
+		}
 	}
-	
+	debug(1, "MAXFLOW: ", flow,"\n");
 	delete [] levels;
 }
 
 int main()
 {
-	// Resource 
+	// LIMITATION 
+	// One of the pitfalls of the current implementation of Dinic's 
+	//  algorithm at the moment is that the algorithm may encounter 
+	//  multiple dead ends during the DFS phase
+	// This can be fixed by making sure that it does not check
+	//  dead end multiple times
+	// RESOURCE: https://www.youtube.com/watch?v=M6cm8UeeziI&t=574s
+	//
+	// Also, just my observation
+	// According the code its a good thing when the edge flow is from a smaller to higher
+	//  level. However what if the sink node is at a lower level? if the code takes
+	//  longer route its counter productive na
 	
-	// Detailed - 
-	// Visualize - 
+	// Resource 
+	// GFG - https://www.geeksforgeeks.org/dinics-algorithm-maximum-flow/
+	// Hacker Earth - https://www.hackerearth.com/practice/algorithms/graphs/maximum-flow/tutorial/
+	// Detailed YT - https://www.youtube.com/watch?v=M6cm8UeeziI
+	// Visualize - https://visualgo.net/en/maxflow
 	
 	// Process
-
+	// The working of this algorithm than its slower counterparts
+	// So, needless to say know them before you start this
+	// 
+	// Okay so the entire proeses here depends on LEVELS
+	// Each node is assigned a level which increases as we traverse each layer
+	// FIRST ,
+	// Assign levels, Depending on the edge. If the edge has the capacity to carry anthing
+	//  then a level is assigned to it. During the level assigning process edges are 
+	//  also enabled OR disabled. That is done depending on if progress is made to 
+	//  a higher level AND if the edges have the capacity to carry stuff
+	// 
+	// Then we find path depending on the enabled edges
+	// Then find the max capacity that can be supoorted by the path
+	// Modify all edges with that value
+	// and find other eligible paths. 
+	// 
+	// LEvel assigning and path finding will continue till the sink cannot be reached.
 	
 	// Complexity 
+	// Combionation of BFS & DFS O(V^2E)
+	// For Bipartite Graph its O(sqrRoot(VE)) 
+	// (Resource https://www.youtube.com/watch?v=M6cm8UeeziI&t=104s)
 	
 	// GRAPH
 	// Ex 1 GFG https://media.geeksforgeeks.org/wp-content/uploads/Dinicalgorithm.png
 	// Ex 2 Hacker https://he-s3.s3.amazonaws.com/media/uploads/6bf2e0d.png
-	// Ex 3 
+	// Ex 3 In directory
 	
-	LOG_LEVEL = 3;
+	LOG_LEVEL = 1;
 	
-	int nodes = 6;
+	int nodes = 11;
 	
 	vector <data> *vArray; 
 	
 	initVArray(nodes, &vArray);
 	
 	// GFG
-	// Src 0 Sink 5 | MAX FLOW 
+	// Src 0 Sink 5 | MAX FLOW 19
+	/*
 	addEdge(vArray, 0, 1, 10);
 	addEdge(vArray, 0, 2, 10);
 	addEdge(vArray, 1, 3, 4);
@@ -293,9 +430,10 @@ int main()
 	addEdge(vArray, 4, 3, 6);
 	addEdge(vArray, 3, 5 ,10);
 	addEdge(vArray, 4, 5, 10);
+	*/
 	
 	// Hacker earth
-	// Src S,0 Sink T,5 | MAX FLOW
+	// Src S,0 Sink T,5 | MAX FLOW 17
 	/*
 	addEdge(vArray, 0, 1, 10);
 	addEdge(vArray, 0, 2, 8);
@@ -308,8 +446,8 @@ int main()
 	*/
 	
 	// YOUTUBE 
-	// SRC 0 Sink 10 | Max Flow: 20
-	/*
+	// SRC 0 Sink 10 | Max Flow: 30
+	
 	addEdge(vArray, 0, 1, 5);
 	addEdge(vArray, 0, 4, 10);
 	addEdge(vArray, 0, 7, 15);
@@ -320,13 +458,15 @@ int main()
 	addEdge(vArray, 2, 5, 25);
 	addEdge(vArray, 2, 3, 10);
 	addEdge(vArray, 5, 6, 30);
+	addEdge(vArray, 5, 7, 5);
 	addEdge(vArray, 8, 6, 20);
 	addEdge(vArray, 8, 9, 10);
 	addEdge(vArray, 3, 10, 5);
+	addEdge(vArray, 6, 2, 15);
 	addEdge(vArray, 6, 10, 15);
 	addEdge(vArray, 6, 9, 15);
 	addEdge(vArray, 9, 10, 10);
-	*/
+	
 	if (LOG_LEVEL >= 1) display(nodes, vArray);
 	
 	cout<<"Algorithm Output--\n";
