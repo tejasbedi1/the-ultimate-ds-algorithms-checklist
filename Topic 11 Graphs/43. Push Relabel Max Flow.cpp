@@ -10,7 +10,6 @@ struct data
 	int nodeB;
 	int capacity;
 	int currentFlow;
-	char state; // State e enabled d disabled u unspecified
 };
 
 void initVArray (int V, vector <data> **vArray)
@@ -24,29 +23,14 @@ void addEdge(vector <data> *vArray, int a, int b, int c)
 	d.nodeA = a;
 	d.nodeB = b;
 	d.capacity = c;
-	d.state = 'u';
 	d.currentFlow = 0;
-	
 	vArray[a].push_back(d);
 	
 	d.nodeA = b; 	// RESIDUAL EDGES
 	d.nodeB = a; 
 	d.capacity = 0;
 	d.currentFlow = 0;
-	d.state = 'u';
 	vArray[b].push_back(d);
-}
-
-void displayEdgeData(stack <data> &sEdgeData)
-{
-	cout<<"Edge Data: ";
-	stack <data> copy = sEdgeData;
-	while (copy.empty() == false)
-	{
-		cout<<"("<<copy.top().nodeA<<","<<copy.top().nodeB<<")"<<" ";
-		copy.pop();
-	}
-	cout<<endl;
 }
 
 void display (int V, vector <data> *vArray)
@@ -64,6 +48,17 @@ void display (int V, vector <data> *vArray)
 				cout<<x.nodeA<<","<<x.nodeB<<"("<<x.currentFlow<<","<<x.capacity<<")"<<" ";
 		}
 		cout<<endl;
+	}
+}
+
+void displayEdgeData(stack <data> &sEdgeData)
+{
+	cout<<"Edge Data: ";
+	stack <data> copy = sEdgeData;
+	while (copy.empty() == false)
+	{
+		cout<<"("<<copy.top().nodeA<<","<<copy.top().nodeB<<")"<<" ";
+		copy.pop();
 	}
 	cout<<endl;
 }
@@ -98,6 +93,18 @@ void displayStack (stack <data> &stk)
 	cout<<endl;
 }
 
+void displayQueue (queue <int> &que)
+{
+	cout<<"Active Nodes...\n";
+	queue <int> temp = que;
+	while (temp.empty() != true)
+	{
+		cout<<temp.front()<<" ";
+		temp.pop();
+	}
+	cout<<endl;	
+}
+
 void displayQueue (queue <data> &que)
 {
 	cout<<"Displaying Queue...\n";
@@ -114,24 +121,15 @@ struct NodeData
 {
 	int node;
 	int height;
-	int excess;	
-	vector <int> parent;
+	int excess;
 };
-
-void displayParents (NodeData *nodeData, int v)
-{
-	for (int i=0; i<nodeData[v].parent.size(); i++)
-		cout<<nodeData[v].parent[i]<<",";
-}
 
 void displayNodeData (int V, NodeData *nodeData)
 { 
 	cout<<"Node Data...\n";
 	for (int i=0; i<V; i++)
 	{
-		cout<<i<<"("<<nodeData[i].height<<","<<nodeData[i].excess<<"(P-";
-		displayParents(nodeData, i);
-		cout<<")"<<")  ";
+		cout<<i<<"("<<nodeData[i].height<<","<<nodeData[i].excess<<")  ";
 	}
 	cout<<"\n";
 }
@@ -141,15 +139,44 @@ void calculateResidualEdge(vector <data> *vArray, int nodeA, int nodeB, int val)
 	for (auto &x: vArray[nodeB])
 	{
 		if (x.nodeB == nodeA)
-			x.currentFlow += val;
+			x.currentFlow = val;
 	}
+}
+
+void calculateForwardEdge(vector <data> *vArray, int nodeA, int nodeB, int val)
+{
+	for (auto &x: vArray[nodeB])
+	{
+		if (x.nodeB == nodeA)
+			x.currentFlow = val;
+	}
+}
+
+void ifNotAreadyInQueueAddInQueue(queue <int> &activeNodes, int node)
+{	
+	queue <int> temp = activeNodes;
+	// Find it, if not found add to queue
+	while (temp.empty() != true)
+	{
+		if (temp.front() == node)
+			return;
+		temp.pop();
+	}
+	debug(3, "Adding ", node, " in Active Nodes Queue\n");
+	activeNodes.push(node);
 }
 
 void PushRelabel(int V, vector <data> *vArray)
 {
 	int i;
 	int src = 0;
-	int sink  = 3;
+	int sink  = 10;
+	
+	int maxFlow = 0;
+	
+	int inFocus;
+	bool flag;
+	int carryingCap;
 	
 	NodeData *nodeData;
 	nodeData = new NodeData[V];
@@ -165,15 +192,15 @@ void PushRelabel(int V, vector <data> *vArray)
 	nodeData[src].excess = -1; 
 	nodeData[sink].excess = -1; 
 	
-	int inFocus;
-	bool flag;
-	
 	// These nodes need to be processed
-	vector <int> activeNodes;
-	activeNodes.push_back(src);
+	//vector <int> activeNodes;
+	queue <int> activeNodes;
 	
-	inFocus = activeNodes[0];
+	activeNodes.push(src);
+	
+	inFocus = activeNodes.front();
 	debug (2, "At node: ", inFocus, "\n");
+	
 	// For src node
 	for (auto &x: vArray[inFocus])
 	{
@@ -183,99 +210,183 @@ void PushRelabel(int V, vector <data> *vArray)
 			calculateResidualEdge(vArray, inFocus, x.nodeB, x.capacity);
 			
 			nodeData[x.nodeB].excess = x.currentFlow;
-			nodeData[x.nodeB].parent.push_back(inFocus);
 			
-			activeNodes.push_back(x.nodeB);
+			debug (3, "Pushing ", x.nodeB, "\n");
+			activeNodes.push(x.nodeB);
 		}	
 	}
-	activeNodes.erase(activeNodes.begin());
+	activeNodes.pop();
 	if (LOG_LEVEL >= 2) display(V, vArray);
 	if (LOG_LEVEL >= 2) displayNodeData(V, nodeData);
-	if (LOG_LEVEL >= 2) displayVector(V, activeNodes);
+	if (LOG_LEVEL >= 2) displayQueue(activeNodes);
+	
+	//system("cls");
 	
 	while (activeNodes.empty() != true)
-	{
+	{	
 		flag = false;
-		
-		inFocus = activeNodes[0];
+		inFocus = activeNodes.front();
 		debug (2, "\nAt node: ", inFocus, "\n");
 		
 		for (auto &x: vArray[inFocus])
 		{
-			if (x.capacity != 0)	// Only run for forard edges 
+			// Check height
+			if (nodeData[inFocus].height > nodeData[x.nodeB].height)
 			{
-				if (nodeData[inFocus].height > nodeData[x.nodeB].height)
+				// Check edge carrying capacity
+				// If forward
+				if (x.capacity != 0)
 				{
-					flag = true;
-					// Edge is full
-					if (x.capacity-x.currentFlow == 0)
-						continue;
-					// If excess in node greater than what the edge can handle
-					else if ( nodeData[inFocus].excess >= (x.capacity-x.currentFlow) )
+					// If the edge has edge carrying capacity 
+					carryingCap = x.capacity-x.currentFlow;
+					if (carryingCap > 0)
 					{
-						nodeData[inFocus].excess = nodeData[inFocus].excess - 
-													(x.capacity-x.currentFlow);
-						nodeData[x.nodeB].excess += (x.capacity-x.currentFlow);
-						nodeData[x.nodeB].parent.push_back(inFocus);
-						x.currentFlow = x.capacity;
-						calculateResidualEdge(vArray, inFocus, x.nodeB,
-							(x.capacity-x.currentFlow));
+						// IF excess is more than the carryign capacit of the edge
+						if (nodeData[inFocus].excess >= carryingCap)
+						{ 
+							x.currentFlow = x.capacity;
+							nodeData[inFocus].excess -= carryingCap;
+							
+							// Give the node at the end, the excess
+							if (x.nodeB != sink)
+							{
+								nodeData[x.nodeB].excess += carryingCap;
+								ifNotAreadyInQueueAddInQueue(activeNodes, x.nodeB);	
+							}
+						}
+						else if (nodeData[inFocus].excess < carryingCap)
+						{
+							x.currentFlow += nodeData[inFocus].excess;
+							
+							// Give the node at the end, the excess
+							if (x.nodeB != sink)
+							{
+								nodeData[x.nodeB].excess += nodeData[inFocus].excess;
+								ifNotAreadyInQueueAddInQueue(activeNodes, x.nodeB);
+							}
+							
+							nodeData[inFocus].excess = 0;
+						}
+						// Modify Residual Edge as well 
+						calculateResidualEdge(vArray, x.nodeA, x.nodeB, x.currentFlow);
+						flag = true;
 					}
-					// If excess in node lesser than the edge capacity
-					else
+				}
+				// If backward 
+				else 
+				{
+					// If the edge has edge carrying capacity 
+					carryingCap = x.currentFlow;
+					if (carryingCap > 0)
 					{
-						x.currentFlow += nodeData[inFocus].excess;
-						nodeData[inFocus].excess = 0;
-						calculateResidualEdge(vArray, inFocus, x.nodeB, 
-							(nodeData[inFocus].excess));
-					}
-				}	
-			}
-		}
+						// IF excess is more than the carryign capacit of the edge
+						if (nodeData[inFocus].excess >= carryingCap)
+						{ 
+							x.currentFlow = 0;
+							nodeData[inFocus].excess -= carryingCap;
+							
+							// Give the node at the end, the excess
+							if (x.nodeB != src)
+							{
+								nodeData[x.nodeB].excess += carryingCap;
+								ifNotAreadyInQueueAddInQueue(activeNodes, x.nodeB);
+							}	
+						}
+						else if (nodeData[inFocus].excess < carryingCap)
+						{
+							x.currentFlow -= nodeData[inFocus].excess;
+							
+							// Give the node at the end, the excess
+							if (x.nodeB != src)
+							{
+								nodeData[x.nodeB].excess += nodeData[inFocus].excess;
+								ifNotAreadyInQueueAddInQueue(activeNodes, x.nodeB);
+							}
 
-		if (flag == false)	// Means that the height was never greater
-		{
-			debug(2, "Height inc for: ", inFocus, "\n");
-			nodeData[inFocus].height += 1; 
-		}
-		else
-		{
-			if (nodeData[inFocus].excess == 0)
-			{
-				debug (2, "Removing ", inFocus, " from active nodes\n");
-				activeNodes.erase(activeNodes.begin());
+							nodeData[inFocus].excess = 0;
+						}
+						// Modify Forward Edge as well 
+						calculateForwardEdge(vArray, x.nodeA, x.nodeB, x.currentFlow);
+						flag = true;
+					}
+				}
 			}
-			else
-			{
-				if (nodeData[ nodeData[inFocus].parent[0] ].height > 
-					nodeData[inFocus].height)
-				{
-					debug(2, "Parent has greater height, Height inc for: ", inFocus, "\n");
-					nodeData[inFocus].height += 1; 		
-				}
-				else
-				{
-					
-				}
-			}	
+		}
+		
+		if (flag == false)
+		{
+			// No work was done increase the height
+			debug(3, "Increasing Height for ", inFocus, "\n");
+			nodeData[inFocus].height += 1;
+		}
+		else if (nodeData[inFocus].excess == 0) 
+		{
+			debug(3, "Popping ", inFocus, "\n");
+			activeNodes.pop();
 		}
 		
 		if (LOG_LEVEL >= 2) display(V, vArray);
 		if (LOG_LEVEL >= 2) displayNodeData(V, nodeData);
-		if (LOG_LEVEL >= 2) displayVector(V, activeNodes);
+		if (LOG_LEVEL >= 2) displayQueue(activeNodes);
+		//system("cls");
 	}
+	
+	debug (2, "Active Nodes Empty, Calculating Flow...\n");
+	for (auto x: vArray[src])
+	{
+		maxFlow += x.currentFlow;
+	}
+	debug (0, "MAXFLOW: ", maxFlow, "\n");
 	delete [] nodeData;
 }
 
 int main()
 {
 	// LIMITATION 
+	// This algorithm badly needs the usage of Hashing
+	// At many points we are looping to find/check existance of edges/ nodes in particular queues
+	// All this ill greatly benifit, if we use Hashing
+	// ..
+	// We might have an issue if the source node has a input edge
 	
 	// Resource 
+	// Mediocre explanations all around
+	// GFG I https://www.geeksforgeeks.org/push-relabel-algorithm-set-1-introduction-and-illustration/
+	// GFG II https://www.geeksforgeeks.org/push-relabel-algorithm-set-2-implementation/
+	// Wikipedia Example https://en.wikipedia.org/wiki/Push%E2%80%93relabel_maximum_flow_algorithm
+	// Youtube Meh explanation: https://www.youtube.com/watch?v=dZpE_7Nr-Zk
 	
 	// Process
+	// OMFG this one is a bitch to write about
+	// See some of the sources (YT or wiki) and read this along
+	//
+	// okay, so lets see
+	// The main algorithm is inside the main algorithm function itself
+	// Thankfully we can do everything inside a clean loop
+	// 
+	// Firstly similiarize ourself with the structures we are going to use
+	//   NodeData and data (edgeData)
+	// We start at the src node, process it first
+	//  The source node will first staturate its outgoing edges 
+	//  meaning the edges are completely filed and the nodes at the ends will have 
+	//  an excess of whatever the edge can deliver 
+	//
+	// Nodes with an excess are added to the actve nodes queue, so that they 
+	// 	can be processed. Whenever the activeNodes queue is empty the algorithm will stop.
+	// 
+	// After the source has been delt with, our main loop begins. Here whichever node
+	//  is on top of the activeNodes queue will be delt with.
+	// Now the main objective for the node inFocus is to lose the excess flow it has
+	// So it will go through iterations in heights so that it can pass off the excess 
+	//  	to the neighbourng nodes OR ultimately regect the excess and push it back
+ 	// All push backed excess will eventually reach the src
+ 	// ANy node which recieves the excess flow will get added to the active nodes queue
+ 	// 
+ 	// This loop will continue unitl there are no more activeNodes. 
+ 	// Sunmming up the output of the src will give us the maxFlow
 	
 	// Complexity 
+	// O(V^2 E) or O (V^2 sqrroot(E))
 	
 	// GRAPH
 	// Ex 0 In Directory (43)
@@ -285,7 +396,7 @@ int main()
 	
 	LOG_LEVEL = 3;
 	
-	int nodes = 6;
+	int nodes = 11;
 	
 	vector <data> *vArray; 
 	
@@ -294,6 +405,7 @@ int main()
 	// YT 
 	// Src 0 Sink 3 | MAX FLOW 12
 	// s=0, P=1, L=2, t=3, F=4, N=5
+	/*
 	addEdge(vArray, 0, 1, 10);
 	addEdge(vArray, 0, 2, 13);
 	addEdge(vArray, 1, 2, 3);
@@ -301,6 +413,7 @@ int main()
 	addEdge(vArray, 2, 4, 6);
 	addEdge(vArray, 4, 5, 10);
 	addEdge(vArray, 5, 3, 5);
+	*/
 		
 	// GFG
 	// Src 0 Sink 5 | MAX FLOW 19
@@ -331,7 +444,7 @@ int main()
 	
 	// YOUTUBE 
 	// SRC 0 Sink 10 | Max Flow: 30
-	/*
+	
 	addEdge(vArray, 0, 1, 5);
 	addEdge(vArray, 0, 4, 10);
 	addEdge(vArray, 0, 7, 15);
@@ -350,9 +463,10 @@ int main()
 	addEdge(vArray, 6, 10, 15);
 	addEdge(vArray, 6, 9, 15);
 	addEdge(vArray, 9, 10, 10);
-	*/
+	
 	
 	if (LOG_LEVEL >= 1) display(nodes, vArray);
+	debug (1,"\n");
 	
 	cout<<"Algorithm Output--\n";
 	PushRelabel (nodes, vArray);
