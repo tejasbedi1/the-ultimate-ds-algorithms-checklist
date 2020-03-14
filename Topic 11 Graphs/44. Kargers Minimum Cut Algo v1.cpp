@@ -249,6 +249,8 @@ int Kargers(int V, vector <data> *vArray, vector <data> vEdge)
 
 int main()
 {
+	// INCOMPLETE v3 is complete
+	
 	// LIMITATION 
 	
 	// Resource 
