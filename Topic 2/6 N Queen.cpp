@@ -7,6 +7,9 @@ void output(int** arr, int size);
 
 int main()
 {
+	// Resource
+	// 
+	
 	int size = 4;
 	int row, col, i;
 	row = col = size;
