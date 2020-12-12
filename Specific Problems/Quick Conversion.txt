@@ -1,0 +1,2 @@
+-> int d = 'a';
+	- Will store character 'a' ascii value in variable d
