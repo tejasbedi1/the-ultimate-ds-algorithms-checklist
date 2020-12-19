@@ -1,6 +1,5 @@
 # The Ultimate Data Structures & Algorithms Checklist
 
-
 ## What am I looking at here ?
 This repository has a collection of Data Structures and Algorithm questions in the form of a Trello checklist meant for the toughest interviews. The checklist has links to resouces explaining the solutions.
 
@@ -19,15 +18,15 @@ Well... I always found that the curation on these websites somewhat off, for the
 
 ## Navigating the Checklist
 This would be the trello template I have been touting about: https://trello.com/b/iktOxew4
-INSERT GIF
+![GIF 1](/Extras/checklist_1.gif)
 
 ### Using TRELLO
 To get started just Click on "Create Board from Template".
 
 1. Difficulty Labels : I've added labels to the cards just as a genareal indication of the difficulty level per topic.
-INSERT GIF
+![GIF 2](/Extras/checklist_2.gif)
 2. Q & D's : Questions in checklists sometimes have Q's indicating the index of the solution in my code folders. 'D' is an indication of the difficulty per card(out of 10). 'D' is only relevant per card and not relevant to the questions on the entire board. So D6 in trees is not equivalent to D6 in Graphs.
-INSERT GIF
+![GIF 3](/Extras/checklist_3.gif)
 
 ### USING MY CODE
 I've written the solutions for some of the questions in C++. My code sometimes would have explanations inside the main function if you'd like to read. In any case answers could be referred from the resources provided.
