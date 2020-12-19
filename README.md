@@ -14,28 +14,28 @@ Well... I always found the curation on these websites somewhat off.
 * Even if there exists an exhaustive list it would'nt be divided into further subtopics. Its like you can never be sure if you're covering all bases. 
 * Sometimes the content is blocked behind a paywall.
 * Other times you keep seeing questions repeating just in a different wrapper. 
-* Also, checklists are oh so much more satisfying.
+* _Also, checklists are oh so much more satisfying._
 
 ## Navigating the Checklist
 This would be the trello template I have been touting about: https://trello.com/b/iktOxew4
 
 ![GIF 1](/Extras/checklist_1.gif)
-
+&nbsp;
 
 ### Using TRELLO
 To get started just Click on "Create Board from Template" on the trello link.
 
-1. Difficulty Labels : I've added labels to the cards just as a general indication of the difficulty level per topic.
+1. **Difficulty Labels** : I've added labels to the cards just as a general indication of the difficulty level per topic.
 
 ![GIF 2](/Extras/checklist_2.gif)
+&nbsp;
 
-
-2. Q & D's : Questions in checklists sometimes have 'Q's and 'D's
+2. **Q & D's** : Questions in checklists sometimes have 'Q's and 'D's
 * 'Q' indicates the index of the solution in my code folders.
 * 'D' is an indication of the difficulty per card (out of 10). 'D' is only relevant per card and not relevant to the questions on the entire board. So D6 under "Trees" is not equivalent to D6 under "Graphs".
 
 ![GIF 3](/Extras/checklist_3.gif)
-
+&nbsp;
 
 ### Using The Code
 I've written the solutions for some of the questions using C++. 
@@ -43,10 +43,11 @@ I've written the solutions for some of the questions using C++.
 * In any case answers could be referred from the resources provided.
 * Some code files have standalone or accompanying images. Feel free to try and understand them xD.
 
-## WHY DID I MAKE THIS ?
+&nbsp;
+## Why did I make this ?
 I was'nt from a Tier 1 college. So although I loved to code, when placement season came around I wasn't exactly sure what to cover or focus on. So I had to settle for "not that great a job". When I started practicing for a better place, I needed an exastive list of problems, which gave me the most trust that I would be covering all bases. So I created this, using questions from GeeksForGeeks, LeetCode, Interview bit, Youtube and some lesser known places. The plan was always to complete it and make it available to all of you.
 
-
+&nbsp;
 ## FAQ's
 ### 1. Why a checklist ?
 * Many people (me included) feel checklists are very powerful. Dividing a task in this form makes it easier to do. 
