@@ -168,6 +168,8 @@ int main()
 	// Best Eplanation so far
 	// https://leetcode.com/problems/word-break-ii/discuss/776320/2-Solution-Hack-and-DFS-with-Memoizations
 	
+	// I found this as well not sure how good it is though
+	// https://www.youtube.com/watch?v=WepWFGxiwRs
 	
 	// Explanition
 	// Okay I spent too long on this Question than I should have
